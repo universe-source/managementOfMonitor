@@ -1,8 +1,7 @@
-from app import get_logger, get_config
 import math
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from app import utils
+from app import utils, get_logger, get_config
 from app.models import CfgNotify
 from app.main.forms import CfgNotifyForm
 from . import main
@@ -10,20 +9,21 @@ from . import main
 logger = get_logger(__name__)
 cfg = get_config()
 
+
 # 通用列表查询
 def common_list(DynamicModel, view):
     # 接收参数
     action = request.args.get('action')
-    id = request.args.get('id')
+    rid = request.args.get('id')
     page = int(request.args.get('page')) if request.args.get('page') else 1
     length = int(request.args.get('length')) if request.args.get('length') else cfg.ITEMS_PER_PAGE
 
     # 删除操作
-    if action == 'del' and id:
+    if action == 'del' and rid:
         try:
-            DynamicModel.get(DynamicModel.id == id).delete_instance()
+            DynamicModel.get(DynamicModel.id == rid).delete_instance()
             flash('删除成功')
-        except:
+        except Exception:
             flash('删除失败')
 
     # 查询列表
@@ -31,19 +31,20 @@ def common_list(DynamicModel, view):
     total_count = query.count()
 
     # 处理分页
-    if page: query = query.paginate(page, length)
+    if page:
+        query = query.paginate(page, length)
 
-    dict = {'content': utils.query_to_list(query), 'total_count': total_count,
+    form = {'content': utils.query_to_list(query), 'total_count': total_count,
             'total_page': math.ceil(total_count / length), 'page': page, 'length': length}
-    return render_template(view, form=dict, current_user=current_user)
+    return render_template(view, form=form, current_user=current_user)
 
 
 # 通用单模型查询&新增&修改
 def common_edit(DynamicModel, form, view):
-    id = request.args.get('id', '')
-    if id:
+    rid = request.args.get('id', '')
+    if rid:
         # 查询
-        model = DynamicModel.get(DynamicModel.id == id)
+        model = DynamicModel.get(DynamicModel.id == rid)
         if request.method == 'GET':
             utils.model_to_form(model, form)
         # 修改

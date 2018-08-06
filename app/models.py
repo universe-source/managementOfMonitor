@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
+import json
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from peewee import MySQLDatabase, Model, CharField, BooleanField, IntegerField
-import json
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from flask_login import UserMixin
 from app import login_manager
 from conf.config import config
-import os
 
 cfg = config[os.getenv('FLASK_CONFIG') or 'default']
 
-db = MySQLDatabase(host=cfg.DB_HOST, user=cfg.DB_USER, passwd=cfg.DB_PASSWD, database=cfg.DB_DATABASE)
+db = MySQLDatabase(host=cfg.DB_HOST, user=cfg.DB_USER,
+                   passwd=cfg.DB_PASSWD, database=cfg.DB_DATABASE)
 
 
 class BaseModel(Model):
@@ -22,7 +25,7 @@ class BaseModel(Model):
         for k in self._data.keys():
             try:
                 r[k] = str(getattr(self, k))
-            except:
+            except Exception:
                 r[k] = json.dumps(getattr(self, k))
         # return str(r)
         return json.dumps(r, ensure_ascii=False)
@@ -39,6 +42,9 @@ class User(UserMixin, BaseModel):
 
     def verify_password(self, raw_password):
         return check_password_hash(self.password, raw_password)
+
+    def generate_password(self, raw_password):
+        self.password = generate_password_hash(raw_password)
 
 
 # 通知人配置

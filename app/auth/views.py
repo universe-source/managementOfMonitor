@@ -1,8 +1,9 @@
 from flask import render_template, redirect, request, url_for, flash
+from flask_login import login_user, logout_user, login_required
+from app.models import User
+
 from . import auth
 from .forms import LoginForm
-from app.models import User
-from flask_login import login_user, logout_user, login_required
 
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -14,10 +15,11 @@ def login():
             user = User.get(User.username == form.username.data)
             if user.verify_password(form.password.data):
                 login_user(user, form.rememberme.data)
+                # 重定向到main.index路由中
                 return redirect(request.args.get('next') or url_for('main.index'))
             else:
                 flash('用户名或密码错误')
-        except:
+        except Exception:
             flash('用户名或密码错误')
     return render_template('auth/login.html', form=form)
 
